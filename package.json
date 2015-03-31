@@ -1,0 +1,28 @@
+{
+  "name": "gmcluster",
+  "version": "1.0.0",
+  "description": "Server-side google maps clustering for Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "node-gyp rebuild"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pkozlov/gmcluster.git"
+  },
+  "keywords": [
+    "geo",
+    "geoclustering",
+    "maps",
+    "map",
+    "clustering"
+  ],
+  "author": "Pavel Kozlov",
+  "license": "MIT",
+  "gypfile": true,
+  "bugs": {
+    "url": "https://github.com/pkozlov/gmcluster/issues"
+  },
+  "homepage": "https://github.com/pkozlov/gmcluster"
+}
