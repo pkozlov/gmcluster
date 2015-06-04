@@ -29,9 +29,9 @@ long pixelDistance(double lat1, double lon1, double lat2, double lon2, int zoom)
     return (long)sqrt(pow((x1 - x2), 2) + pow((y1 - y2), 2)) >> (21 - zoom);
 }
 
-Handle<Array> newClasterPoint(double x1, double x2, double y1, double y2, float movePercent) {
+Handle<Array> newClasterPoint(double x1, double x2, double y1, double y2, float movePercent, Isolate* isolate) {
 
-    Handle<Array> newPoint = Array::New();
+    Handle<Array> newPoint = Array::New(isolate);
 
     double pixel = sqrt(pow((x1 - x2), 2) + pow((y1 - y2), 2));
 
@@ -41,15 +41,15 @@ Handle<Array> newClasterPoint(double x1, double x2, double y1, double y2, float 
     double newXMove = cosin * distanceMovePixel;
     double newYMove = sinus * distanceMovePixel;
 
-    newPoint->Set(0, Number::New(x1 - newXMove));
-    newPoint->Set(1, Number::New(y1 - newYMove));
+    newPoint->Set(0, Number::New(isolate, x1 - newXMove));
+    newPoint->Set(1, Number::New(isolate, y1 - newYMove));
     return newPoint;
 
 }
 
-Handle<Value> cluster_method(const Arguments& args) {
-
-    HandleScope scope;
+void cluster_method(const FunctionCallbackInfo<Value>& args) {
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
 
     Handle<Array> inputArray;
 
@@ -67,7 +67,7 @@ Handle<Value> cluster_method(const Arguments& args) {
 
     }
 
-    Handle<Array> clustered = Array::New();
+    Handle<Array> clustered = Array::New(isolate);
 
     for (unsigned int i = 0; i < markers.size(); ) {
 
@@ -78,16 +78,16 @@ Handle<Value> cluster_method(const Arguments& args) {
 
         vector<int> cluterFindedIndex;
 
-        Handle<Array> clusterPoint = Array::New();
-        clusterPoint = Handle<Array>::Cast(marker->Get(String::New("location")));
+        Handle<Array> clusterPoint = Array::New(isolate);
+        clusterPoint = Handle<Array>::Cast(marker->Get(String::NewFromUtf8(isolate, "location")));
 
         float movePercent = 0.5;
 
         for (unsigned int j = 0; j < markers.size(); j++) {
 
             Handle<Object> arg = Handle<Object>::Cast(markers.at(j));
-            Handle<Object> currentLocation = Handle<Object>::Cast(marker->Get(String::New("location")));
-            Handle<Object> clusterLocation = Handle<Object>::Cast(arg->Get(String::New("location")));
+            Handle<Object> currentLocation = Handle<Object>::Cast(marker->Get(String::NewFromUtf8(isolate, "location")));
+            Handle<Object> clusterLocation = Handle<Object>::Cast(arg->Get(String::NewFromUtf8(isolate, "location")));
 
             long pixel = pixelDistance(
 
@@ -108,7 +108,8 @@ Handle<Value> cluster_method(const Arguments& args) {
                                                 clusterLocation->Get(0)->NumberValue(),
                                                 clusterPoint->Get(1)->NumberValue(),
                                                 clusterLocation->Get(1)->NumberValue(),
-                                                movePercent);
+                                                movePercent,
+                                                isolate);
 
                 movePercent -= (movePercent * 0.03);
 
@@ -121,12 +122,12 @@ Handle<Value> cluster_method(const Arguments& args) {
                 markers.erase(markers.begin() + (cluterFindedIndex.at(k) - k));
             }
 
-            Local<Object> clusterData = Object::New();
+            Local<Object> clusterData = Object::New(isolate);
 
-            marker->Delete(String::New("id"));
+            marker->Delete(String::NewFromUtf8(isolate, "id"));
 
-            clusterData->Set(String::NewSymbol("count"), Number::New(cluster + 1));
-            clusterData->Set(String::NewSymbol("coordinate"), clusterPoint);
+            clusterData->Set(String::NewFromUtf8(isolate, "count"), Number::New(isolate, cluster + 1));
+            clusterData->Set(String::NewFromUtf8(isolate, "coordinate"), clusterPoint);
 
             clustered->Set(clustered->Length(), clusterData);
         } else {
@@ -135,11 +136,16 @@ Handle<Value> cluster_method(const Arguments& args) {
 
     }
 
-    return scope.Close(clustered);
+//    return scope.Close(clustered);
+    args.GetReturnValue().Set(clustered);
 }
 
+//void init(Handle<Object> exports) {
+//        exports->Set(String::NewSymbol("cluster"), FunctionTemplate::New(cluster_method)->GetFunction());
+//}
+
 void init(Handle<Object> exports) {
-        exports->Set(String::NewSymbol("cluster"), FunctionTemplate::New(cluster_method)->GetFunction());
+    NODE_SET_METHOD(exports, "cluster", cluster_method);
 }
 
 NODE_MODULE(cluster, init)
