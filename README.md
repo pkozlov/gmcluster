@@ -1,4 +1,4 @@
-# gmcluster
+# gmcluster [![Build Status](https://travis-ci.org/pkozlov/gmcluster.svg)](https://travis-ci.org/pkozlov/gmcluster)
 Server-side google maps clustering for Node.js
 
 ## Install
